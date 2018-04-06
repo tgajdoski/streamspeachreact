@@ -7,13 +7,12 @@
     "express": "^4.16.2",
     "express-secure-only": "^0.2.1",
     "react": "^16.2.0",
+    "react-autosize-textarea": "^3.0.2",
     "react-dom": "^16.2.0",
     "react-scripts": "1.1.1",
     "socket.io-client": "^2.1.0",
     "socket.io-stream": "^0.9.1",
-    "vcap_services": "^0.3.4",
-    "watson-developer-cloud": "^3.0.6",
-    "watson-speech": "^0.34.1"
+    "vcap_services": "^0.3.4"
   },
   "scripts": {
     "start": "react-scripts start",

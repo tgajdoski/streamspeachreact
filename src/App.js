@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
+import TextareaAutosize from 'react-autosize-textarea';
+
+
 
 const io = require('socket.io-client')
 const socket = io('http://localhost:3555');
@@ -11,11 +14,12 @@ let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 const languageSelected = 'en-US'; // this.selected;
 
 
+
 class App extends Component {
   constructor() {
     super();
     this.state = {
-      text: 'Raboti li ova voopsto',
+      text: 'press the button and talk something in english',
     };
     this.create();
   }
@@ -123,21 +127,45 @@ class App extends Component {
     window.location.href = "http://localhost:8080/"
   };
 
+
+callAnalysis(){
+  let texttoSend = this.state.totaltext;
+  const document = {
+    content: texttoSend,
+    type: 'PLAIN_TEXT',
+  };
+
+}
+
   onClickButton() {
     this.startRecording();
     // console.log("START");
     // socket.emit('LANGUAGE_SPEECH', languageSelected);
-  };
-
-  render() {
     let that = this;
     socket.on('SPEECH_RESULTS', function (data) {
       console.log(data);
+      
+      let texttot = '';
+      if (that.state.totaltext)
+        texttot = that.state.totaltext + ' ' + data;
+      else
+        texttot += data;
+
+      socket.emit('SENTIMENT', texttot);// that.state.totaltext);  
       that.setState({
         text: data,
-      })
+        totaltext: texttot
+      });
     });
 
+    socket.on('ANALYSIS', function (sentiment) {
+      console.log(' ANALYSIS', sentiment );
+  })
+
+  };
+
+  render() {
+   
     // socket.on('event', function(data){});
     // socket.on('disconnect', function(){});
 
@@ -145,10 +173,12 @@ class App extends Component {
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
+          <h3 className="App-title">Welcome to React</h3>
         </header>
         <button id="button" onClick={this.onClickButton.bind(this)}>Listen To Microphone</button>
         <div className="App-Text">{this.state.text}</div>
+
+        <TextareaAutosize style={{marginTop: 100, width: 300}} rows={3} placeholder='total text here' value={this.state.totaltext}/>
       </div>
     );
   }

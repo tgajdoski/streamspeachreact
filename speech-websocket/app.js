@@ -1,7 +1,15 @@
 
 const io = require('socket.io')(3555);
 const ss = require('socket.io-stream');
+const language = require('@google-cloud/language');
+
+  
+
 console.log('Server is starting....DONE');
+
+
+
+
 io.on('connection', function (socket) {
     const record = require('node-record-lpcm16');
     const Speech = require('@google-cloud/speech');
@@ -10,6 +18,14 @@ io.on('connection', function (socket) {
    const speech = Speech({
         keyFilename: './Reporto-c77c8844097a.json'
    });
+
+   const languageClient = new language.LanguageServiceClient({
+    projectId: "reporto-189514",
+    keyFilename: './Reporto-c77c8844097a.json'
+   });
+   
+  
+
     const encoding = 'LINEAR16';
     const sampleRateHertz = 16000;
 
@@ -25,6 +41,26 @@ io.on('connection', function (socket) {
     socket.on('LANGUAGE_SPEECH', function (language) {
         console.log('set language' ,language );
         request.config.languageCode = language;
+    })
+
+
+    // sentiment analysis
+    socket.on('SENTIMENT', function (text) {
+        console.log('set SENTIMENT', text );
+
+
+        var document = {
+            content : text,
+            type : 'PLAIN_TEXT'
+        };
+        languageClient.analyzeSentiment({document: document}).then(function(responses) {
+            var response = responses[0];
+            // doThingsWith(response)
+            socket.emit('ANALYSIS', response);
+        })
+        .catch(function(err) {
+            console.error(err);
+        });
     })
 
 // Create a recognize stream
@@ -43,6 +79,7 @@ io.on('connection', function (socket) {
     console.log('SERVER CONNECT');
     ss(socket).on('START_SPEECH', function (stream) {
         stream.pipe(recognizeStream);
+
     });
 
     socket.on('STOP_SPEECH', function () {
