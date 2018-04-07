@@ -149,7 +149,7 @@ class App extends Component {
   // Mixed	"score": 0.0, "magnitude": 4.0
 
   let {score, magnitude} = documentSentiment;
-console.log("AAAA " , score, magnitude)
+
 let imageUrl = neutral;
 let sentimentText = 'Clearly Positive';
 
