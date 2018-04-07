@@ -3,6 +3,10 @@ import logo from './logo.svg';
 import './App.css';
 import TextareaAutosize from 'react-autosize-textarea';
 
+import angry from './images/angry-face.png';
+import confused from './images/confused-face.png';
+import neutral from './images/neutral-face.png';
+import smiling from './images/slightly-smiling-face.png';
 
 
 const io = require('socket.io-client')
@@ -19,7 +23,9 @@ class App extends Component {
   constructor() {
     super();
     this.state = {
-      text: 'press the button and talk something in english',
+      text: 'talk something',
+      image: neutral,
+      sentimentText: 'Neutral',
     };
     this.create();
   }
@@ -72,7 +78,7 @@ class App extends Component {
   };
 
   downsampleBuffer(buffer, sampleRate, outSampleRate) {
-    if (outSampleRate == sampleRate) {
+    if (outSampleRate ===  sampleRate) {
       return buffer;
     }
     if (outSampleRate > sampleRate) {
@@ -104,8 +110,11 @@ class App extends Component {
     this.result = true;
     this.btn = false;
     this.btnStop = true;
+    try{
     scriptNode.connect(audioContext.destination);
     ss(socket).emit('START_SPEECH', ssStream);
+    }catch(err){};
+    
     setInterval(function () {
       this.stopRecording();
     }.bind(this), 55000);
@@ -114,7 +123,11 @@ class App extends Component {
   stopRecording() {
     this.btnStop = false;
     this.btn = true;
+    try{
     scriptNode.disconnect(audioContext.destination);
+    }
+    catch(err)
+    {};
     // ssStream.end();
     socket.emit('STOP_SPEECH', {});
   };
@@ -128,14 +141,41 @@ class App extends Component {
   };
 
 
-callAnalysis(){
-  let texttoSend = this.state.totaltext;
-  const document = {
-    content: texttoSend,
-    type: 'PLAIN_TEXT',
-  };
+ getImage(documentSentiment){
 
+  // Clearly Positive*	"score": 0.8, "magnitude": 3.0
+  // Clearly Negative*	"score": -0.6, "magnitude": 4.0
+  // Neutral	"score": 0.1, "magnitude": 0.0
+  // Mixed	"score": 0.0, "magnitude": 4.0
+
+  let {score, magnitude} = documentSentiment;
+console.log("AAAA " , score, magnitude)
+let imageUrl = neutral;
+let sentimentText = 'Clearly Positive';
+
+if (score > 0.6){
+  imageUrl = smiling;
+ sentimentText = 'Clearly Positive';
 }
+else if (score < 0){
+  imageUrl = angry;
+ sentimentText = 'Clearly Negative';
+}
+else if (score >=0 && magnitude >2){
+  imageUrl = confused;
+ sentimentText = 'Mixed ';
+}
+else{
+  imageUrl = neutral;
+  sentimentText = 'Neutral ';
+}
+
+  this.setState({
+    image: imageUrl,
+    sentimentText: sentimentText
+  });
+
+ }
 
   onClickButton() {
     this.startRecording();
@@ -159,6 +199,11 @@ callAnalysis(){
     });
 
     socket.on('ANALYSIS', function (sentiment) {
+      that.getImage(sentiment.documentSentiment)
+      that.setState({
+        sentiment: JSON.stringify(sentiment.documentSentiment)
+      });
+
       console.log(' ANALYSIS', sentiment );
   })
 
@@ -175,10 +220,18 @@ callAnalysis(){
           <img src={logo} className="App-logo" alt="logo" />
           <h3 className="App-title">Welcome to React</h3>
         </header>
+
+        
+
         <button id="button" onClick={this.onClickButton.bind(this)}>Listen To Microphone</button>
         <div className="App-Text">{this.state.text}</div>
 
         <TextareaAutosize style={{marginTop: 100, width: 300}} rows={3} placeholder='total text here' value={this.state.totaltext}/>
+        <img style={{marginTop: 100, width: 128, height: 128}} alt="face sentiment"  src={this.state.image} />
+       
+         <TextareaAutosize style={{marginTop: 100, width: 400}} rows={3} placeholder='sentiment analysis' value={this.state.sentiment}/>
+
+         
       </div>
     );
   }
